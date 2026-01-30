@@ -1,0 +1,13 @@
+README.md
+pyproject.toml
+instantly/__init__.py
+instantly/cli.py
+instantly/client.py
+instantly/commands/__init__.py
+instantly/commands/emails.py
+instantly_cli.egg-info/PKG-INFO
+instantly_cli.egg-info/SOURCES.txt
+instantly_cli.egg-info/dependency_links.txt
+instantly_cli.egg-info/entry_points.txt
+instantly_cli.egg-info/requires.txt
+instantly_cli.egg-info/top_level.txt
