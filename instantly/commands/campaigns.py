@@ -130,6 +130,80 @@ def duplicate(
     print(json.dumps(result, indent=2))
 
 
+@campaigns_app.command()
+def update(
+    id: str = typer.Argument(help="UUID of the campaign to update"),
+    name: Optional[str] = typer.Option(None, "--name", help="Campaign name"),
+    daily_limit: Optional[int] = typer.Option(None, "--daily-limit", help="Daily email sending limit"),
+    email_gap: Optional[int] = typer.Option(None, "--email-gap", help="Gap between emails in minutes"),
+    random_wait_max: Optional[int] = typer.Option(None, "--random-wait-max", help="Max random wait in minutes"),
+    stop_on_reply: Optional[bool] = typer.Option(
+        None,
+        "--stop-on-reply/--no-stop-on-reply",
+        help="Whether to stop the campaign on reply",
+    ),
+    stop_on_auto_reply: Optional[bool] = typer.Option(
+        None,
+        "--stop-on-auto-reply/--no-stop-on-auto-reply",
+        help="Whether to stop the campaign on auto-reply",
+    ),
+    link_tracking: Optional[bool] = typer.Option(
+        None,
+        "--link-tracking/--no-link-tracking",
+        help="Whether link tracking is enabled",
+    ),
+    open_tracking: Optional[bool] = typer.Option(
+        None,
+        "--open-tracking/--no-open-tracking",
+        help="Whether open tracking is enabled",
+    ),
+    daily_max_leads: Optional[int] = typer.Option(None, "--daily-max-leads", help="Max new leads per day"),
+    text_only: Optional[bool] = typer.Option(
+        None,
+        "--text-only/--no-text-only",
+        help="Whether emails should be sent as text-only",
+    ),
+    sequences: Optional[str] = typer.Option(None, "--sequences", help="Full sequences JSON string"),
+):
+    """Update a campaign."""
+    payload = {}
+
+    if name is not None:
+        payload["name"] = name
+    if daily_limit is not None:
+        payload["daily_limit"] = daily_limit
+    if email_gap is not None:
+        payload["email_gap"] = email_gap
+    if random_wait_max is not None:
+        payload["random_wait_max"] = random_wait_max
+    if stop_on_reply is not None:
+        payload["stop_on_reply"] = stop_on_reply
+    if stop_on_auto_reply is not None:
+        payload["stop_on_auto_reply"] = stop_on_auto_reply
+    if link_tracking is not None:
+        payload["link_tracking"] = link_tracking
+    if open_tracking is not None:
+        payload["open_tracking"] = open_tracking
+    if daily_max_leads is not None:
+        payload["daily_max_leads"] = daily_max_leads
+    if text_only is not None:
+        payload["text_only"] = text_only
+    if sequences is not None:
+        try:
+            payload["sequences"] = json.loads(sequences)
+        except json.JSONDecodeError as exc:
+            print(f"Error: invalid JSON for --sequences ({exc})")
+            raise typer.Exit(code=1)
+
+    if not payload:
+        print("Error: provide at least one field to update.")
+        raise typer.Exit(code=1)
+
+    client = InstantlyClient()
+    result = client.patch(f"/api/v2/campaigns/{id}", json=payload)
+    print(json.dumps(result, indent=2))
+
+
 @campaigns_app.command("add-leads")
 def add_leads(
     campaign_id: str = typer.Argument(help="UUID of the campaign to add leads to"),
