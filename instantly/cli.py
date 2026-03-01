@@ -1,12 +1,14 @@
 import typer
 
 from instantly.client import save_api_key
+from instantly.commands.campaigns import campaigns_app
 from instantly.commands.emails import emails_app
 from instantly.commands.leads import leads_app
 
 app = typer.Typer(no_args_is_help=True)
 app.add_typer(emails_app, name="emails")
 app.add_typer(leads_app, name="leads")
+app.add_typer(campaigns_app, name="campaigns")
 
 
 @app.command()
