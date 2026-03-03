@@ -65,17 +65,29 @@ def _load_leads_input(file: Optional[str]) -> list:
     raise typer.Exit(code=1)
 
 
+STATUS_LABELS = {
+    0: "Draft",
+    1: "Active",
+    2: "Paused",
+    3: "Completed",
+    4: "Running Subsequences",
+    -1: "Accounts Unhealthy",
+    -2: "Bounce Protect",
+    -99: "Account Suspended",
+}
+
+
 @campaigns_app.command("list")
 def list_campaigns(
     limit: int = typer.Option(10, help="Number of campaigns to return", min=1, max=100),
     search: Optional[str] = typer.Option(None, help="Filter by campaign name"),
     status: Optional[int] = typer.Option(None, help="Filter by campaign status (0, 1, 2, 3)", min=0, max=3),
     starting_after: Optional[str] = typer.Option(None, help="Pagination cursor"),
+    sort: str = typer.Option("newest", help="Sort order: newest or oldest (by timestamp_created)"),
+    brief: bool = typer.Option(False, "--brief", help="Token-efficient output: id, name, status, created"),
 ):
-    """List campaigns."""
-    params = {
-        "limit": limit,
-    }
+    """List campaigns, sorted newest-first by default."""
+    params = {"limit": limit}
     if search is not None:
         params["search"] = search
     if status is not None:
@@ -84,8 +96,39 @@ def list_campaigns(
         params["starting_after"] = starting_after
 
     client = InstantlyClient()
-    result = client.get("/api/v2/campaigns", params=params)
-    print(json.dumps(result, indent=2))
+
+    # Fetch all campaigns across pages so sorting is global, not per-page
+    all_items = []
+    fetch_params = {k: v for k, v in params.items() if k != "limit"}
+    fetch_params["limit"] = 100
+    next_cursor = params.get("starting_after")
+    while True:
+        if next_cursor:
+            fetch_params["starting_after"] = next_cursor
+        page = client.get("/api/v2/campaigns", params=fetch_params)
+        items = page.get("items", [])
+        all_items.extend(items)
+        next_cursor = page.get("next_starting_after")
+        if not next_cursor or len(items) < 100:
+            break
+
+    reverse = sort != "oldest"
+    all_items = sorted(all_items, key=lambda c: c.get("timestamp_created", ""), reverse=reverse)
+    result = {"items": all_items[:limit]}
+
+    if brief:
+        items = [
+            {
+                "id": c["id"],
+                "name": c["name"],
+                "status": STATUS_LABELS.get(c.get("status"), c.get("status")),
+                "created": c.get("timestamp_created", ""),
+            }
+            for c in result.get("items", [])
+        ]
+        print(json.dumps(items))
+    else:
+        print(json.dumps(result, indent=2))
 
 
 @campaigns_app.command()

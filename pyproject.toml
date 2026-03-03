@@ -12,5 +12,8 @@ dependencies = [
     "requests>=2.31",
 ]
 
+[tool.setuptools.packages.find]
+include = ["instantly*"]
+
 [project.scripts]
 instantly = "instantly.cli:app"
